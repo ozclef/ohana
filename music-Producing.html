@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=UTF-8">
+  <title>MusicPRO!</title>
+</head>
+<body>
+  <h1>
+    Hello, World!
+  </h1>
+
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sintetizador de Piano</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .key {
+            width: 60px;
+            height: 180px;
+            background-color: #cbd5e1;
+            border: 2px solid #94a3b8;
+            cursor: pointer;
+            transition: all 0.1s ease-in-out;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .key.active {
+            background-color: #38bdf8;
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+        .black-key {
+            background-color: #1e293b;
+            width: 40px;
+            height: 120px;
+            position: relative;
+            z-index: 10;
+            margin: 0 -20px;
+            border: 2px solid #0f172a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+        }
+        .black-key.active {
+            background-color: #64748b;
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container text-center">
+    <h1 class="text-4xl font-bold mb-6">Sintetizador de Piano</h1>
+    <p class="mb-8 text-gray-600">Este prototipo demuestra cómo se puede manipular un solo sonido para crear las notas de una escala. Presiona las teclas del teclado de tu computadora o haz clic en las teclas del piano.</p>
+
+    <div id="piano" class="flex justify-center relative">
+        <div class="key" data-note="C4">Do</div>
+        <div class="black-key" data-note="C#4"></div>
+        <div class="key" data-note="D4">Re</div>
+        <div class="black-key" data-note="D#4"></div>
+        <div class="key" data-note="E4">Mi</div>
+        <div class="key" data-note="F4">Fa</div>
+        <div class="black-key" data-note="F#4"></div>
+        <div class="key" data-note="G4">Sol</div>
+        <div class="black-key" data-note="G#4"></div>
+        <div class="key" data-note="A4">La</div>
+        <div class="black-key" data-note="A#4"></div>
+        <div class="key" data-note="B4">Si</div>
+    </div>
+
+    <div id="message-box" class="mt-8 p-4 bg-gray-100 rounded-lg text-gray-700">Presiona una tecla para empezar.</div>
+
+</div>
+
+<script>
+    const notes = {
+        'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23,
+        'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88
+    };
+
+    const keyMap = {
+        'q': 'C4', '2': 'C#4', 'w': 'D4', '3': 'D#4', 'e': 'E4', 'r': 'F4', '5': 'F#4',
+        't': 'G4', '6': 'G#4', 'y': 'A4', '7': 'A#4', 'u': 'B4'
+    };
+
+    const messageBox = document.getElementById('message-box');
+    const pianoKeys = document.querySelectorAll('.key, .black-key');
+    
+    let audioContext;
+    let oscillator;
+
+    function createOscillator() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        oscillator = audioContext.createOscillator();
+        oscillator.type = 'sawtooth'; // Un tipo de onda que suena como un sintetizador
+        oscillator.connect(audioContext.destination);
+        return oscillator;
+    }
+
+    function playNote(note) {
+        messageBox.textContent = `Reproduciendo: ${note} (${notes[note]} Hz)`;
+        const freq = notes[note];
+        
+        if (oscillator) {
+            oscillator.stop();
+        }
+
+        const newOscillator = createOscillator();
+        newOscillator.frequency.value = freq;
+        newOscillator.start();
+        oscillator = newOscillator; // Guarda la referencia para detenerlo después
+    }
+
+    function stopNote() {
+        if (oscillator) {
+            oscillator.stop();
+            oscillator = null;
+        }
+        messageBox.textContent = 'Presiona una tecla para empezar.';
+    }
+
+    pianoKeys.forEach(key => {
+        key.addEventListener('mousedown', () => {
+            const note = key.dataset.note;
+            playNote(note);
+            key.classList.add('active');
+        });
+        key.addEventListener('mouseup', () => {
+            stopNote();
+            key.classList.remove('active');
+        });
+        key.addEventListener('mouseleave', () => {
+            stopNote();
+            key.classList.remove('active');
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if (keyMap[key]) {
+            const note = keyMap[key];
+            const pianoKey = document.querySelector(`[data-note="${note}"]`);
+            if (pianoKey) {
+                pianoKey.classList.add('active');
+                if (!oscillator || oscillator.frequency.value !== notes[note]) {
+                    playNote(note);
+                }
+            }
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        if (keyMap[key]) {
+            const note = keyMap[key];
+            const pianoKey = document.querySelector(`[data-note="${note}"]`);
+            if (pianoKey) {
+                pianoKey.classList.remove('active');
+            }
+            stopNote();
+        }
+    });
+</script>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Portafolio Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .header {
+            background-color: #334155;
+            color: white;
+            padding: 2.5rem 1rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .content-section {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .timeline-item {
+            position: relative;
+            padding: 1rem;
+            margin-left: 2rem;
+            border-left: 2px solid #cbd5e1;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -11px;
+            top: 1.5rem;
+            width: 20px;
+            height: 20px;
+            background-color: #38bdf8;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .timeline-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .timeline-description {
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="header">
+        <h1 class="text-4xl font-bold">Mi Portafolio Profesional y Guía de Desarrollo</h1>
+        <p class="text-gray-300 mt-2">Un resumen de mis aprendizajes, proyectos y estrategias</p>
+    </div>
+
+    <div class="container mt-8 flex flex-col gap-8">
+        <!-- Sección 1: Mi Filosofía y Proyección -->
+        <div class="content-section">
+            <h2 class="text-3xl font-bold text-center mb-6">Mi Filosofía de Desarrollo</h2>
+            <p class="text-gray-600 text-lg mb-4">
+                No busco simplemente copiar, sino entender la lógica detrás de los sistemas. Mi objetivo es aprender, aplicar lo que sé y construir de buena fe.
+                Mi intención es comprender la base de un producto, desde la codificación hasta su despliegue, para crear soluciones originales y con valor. 
+            </p>
+            <p class="text-gray-600 text-lg">
+                La programación es una herramienta para crear, no para plagiar. Mi mayor motivación es transformar ideas complejas en productos digitales que resuelvan problemas reales.
+            </p>
+        </div>
+
+        <!-- Sección 2: Fundamentos Técnicos -->
+        <div class="content-section">
+            <h2 class="text-3xl font-bold text-center mb-6">Fundamentos Técnicos</h2>
+            
+            <h3 class="text-2xl font-bold mb-4">El Lenguaje de los Comandos</h3>
+            <p class="text-gray-600 mb-4">
+                He aprendido a simplificar conceptos técnicos para recordarlos mejor.
+            </p>
+            <ul class="list-disc list-inside text-gray-700 space-y-2">
+                <li><strong class="text-blue-500">`href`</strong>: Es la **dirección de destino**. Es a dónde vamos.</li>
+                <li><strong class="text-blue-500">`src`</strong>: Es la **fuente de origen**. Es de dónde viene el archivo.</li>
+                <li><strong class="text-blue-500">`class`</strong>: Es la **etiqueta para estilos**. Permite aplicar un diseño (CSS) a múltiples elementos.</li>
+            </ul>
+
+            <h3 class="text-2xl font-bold mt-8 mb-4">Procesando el Sonido y el MIDI</h3>
+            <p class="text-gray-600 mb-4">
+                La clave no es el audio en sí, sino cómo se manipulan sus variables. Los programas no guardan un archivo para cada nota, sino que procesan la frecuencia (Hertz) de un solo sonido para crear toda la escala. Esto se logra con la **Web Audio API**.
+            </p>
+            <div class="bg-gray-100 p-4 rounded-lg">
+                <p class="font-mono text-sm text-gray-700">// Ejemplo de cómo la lógica transforma la frecuencia (Hertz) en notas musicales</p>
+                <code class="block whitespace-pre-wrap text-sm text-gray-800">
+                    // Las notas musicales se basan en frecuencias (Hertz).
+                    const notasMusicales = {
+                        'C4': 261.63, 
+                        'D4': 293.66,
+                        // ... y así sucesivamente para las 12 notas
+                    };
+
+                    // La Web Audio API nos permite cambiar la frecuencia de un sonido.
+                    // Esto es lo que hace un sintetizador.
+                    const oscillator = audioContext.createOscillator();
+                    oscillator.frequency.value = notasMusicales['C4']; // Cambia el valor para tocar otra nota
+                </code>
+            </div>
+        </div>
+
+        <!-- Sección 3: Guía Estratégica para el Desarrollo -->
+        <div class="content-section">
+            <h2 class="text-3xl font-bold text-center mb-6">Guía Estratégica para el Despliegue y Negocio</h2>
+            <div class="timeline-item">
+                <div class="timeline-title">Paso 1: Priorizar la Arquitectura sobre el Prototipo</div>
+                <p class="timeline-description">Un prototipo de un solo archivo es bueno para aprender, pero una arquitectura profesional separa el **HTML**, el **CSS** y el **JavaScript**. Esto hace que el proyecto sea más fácil de mantener y escalar. </p>
+                <div class="bg-gray-100 p-4 rounded-lg mt-4">
+                    <p class="font-mono text-sm text-gray-700">// Los comentarios en JavaScript ayudan a entender la lógica.</p>
+                    <code class="block whitespace-pre-wrap text-sm text-gray-800">
+                        // Esto es un comentario de una sola línea.
+                        /*
+                        * Este es un comentario
+                        * de varias líneas.
+                        */
+                    </code>
+                    <p class="font-mono text-sm text-gray-700 mt-2">// Comentarios en HTML</p>
+                    <code class="block whitespace-pre-wrap text-sm text-gray-800">
+                        <!-- Esto es un comentario en HTML -->
+                    </code>
+                    <p class="font-mono text-sm text-gray-700 mt-2">// Comentarios en CSS</p>
+                    <code class="block whitespace-pre-wrap text-sm text-gray-800">
+                        /*
+                        .container {
+                            display: flex; /* Muestra los elementos en una fila */
+                        }
+                        */
+                    </code>
+                </div>
+            </div>
+            <div class="timeline-item mt-8">
+                <div class="timeline-title">Paso 2: Proteger tu Trabajo y tu Marca</div>
+                <p class="timeline-description">Tu idea es tu activo más valioso. Debes protegerla con **propiedad intelectual** (derechos de autor, patentes, marcas). Es crucial registrar tu marca en el **IMPI** y ser cuidadoso al compartir ideas públicamente.</p>
+            </div>
+            <div class="timeline-item mt-8">
+                <div class="timeline-title">Paso 3: El Despliegue Profesional</div>
+                <p class="timeline-description">Para que tu proyecto esté en línea, necesitas un servicio de hosting. Opciones como **GitHub Pages** (gratuito) o **Firebase Hosting** (ideal para escalar) son perfectas para mostrar tu portafolio y tu conocimiento de los flujos de despliegue profesionales.</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+<!-- Chosen Palette: Calm & Focused -->
+<!-- Application Structure Plan: The SPA is structured as a personal narrative journey to showcase growth, moving from philosophy to foundational knowledge, interactive experiments, consolidated projects, and future vision. This thematic flow is more engaging for employers than a simple project list. Interactions include a clickable learning timeline, playable musical instruments, and an embedded CRUD application module, all navigated seamlessly within a single page to maintain performance and focus. -->
+<!-- Visualization & Content Choices: 
+    - Personal Philosophy: Goal: Inform. Method: Formatted Text. Justification: Sets a personal tone.
+    - Learning Journey: Goal: Organize. Method: Interactive Timeline (HTML/CSS). Interaction: Click to reveal details. Justification: Visually structures the learning process.
+    - The Lab (Instruments): Goal: Engage. Method: Interactive UI (HTML/CSS/JS with Web Audio API). Interaction: Playable instruments. Justification: Demonstrates practical application of complex concepts.
+    - Projects (AUTOS MONGO): Goal: Demonstrate. Method: Embedded interactive module (reimplemented JS). Interaction: Full CRUD functionality. Justification: Showcases ability to build a complete, data-driven app.
+    - Future Vision: Goal: Inform. Method: Formatted Text with icons (Unicode). Justification: Clearly outlines ambitions and strategic thinking.
+    - NO SVG/Mermaid used. All visuals are HTML/CSS or JS/Canvas-based where applicable. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portafolio Profesional - Oscar Cruz Diaz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* * Estilos Generales
+         * Este bloque de CSS define la apariencia base de la página.
+         * Usamos 'Inter' como fuente principal para un look moderno y legible.
+         * El color de fondo es un gris claro (#f1f5f9) para un contraste suave.
+        */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
+        /* * Estilos para las Teclas del Piano y Pads de Batería
+         * Estas clases definen la apariencia y comportamiento de los elementos interactivos
+         * en la sección del laboratorio musical, creando una experiencia táctil y visual.
+        */
+        .key, .drum-pad {
+            transition: all 0.1s ease-in-out;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+        }
+        .key:active, .drum-pad:active, .key.active, .drum-pad.active {
+            transform: scale(0.95);
+            filter: brightness(1.1);
+        }
+        .black-key {
+             background-color: #1e293b;
+             width: 40px;
+             height: 120px;
+             position: relative;
+             z-index: 10;
+             margin: 0 -22px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- 
+      CONTENEDOR PRINCIPAL
+      Este es el layout principal de la aplicación.
+      Usa un grid para organizar la barra de navegación lateral y el contenido principal.
+    -->
+    <div class="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
+        <!-- 
+          BARRA DE NAVEGACIÓN LATERAL (Sidebar)
+          Esta barra es fija en pantallas grandes y se oculta en móviles.
+          Contiene el perfil y los enlaces de navegación que controlan qué sección se muestra.
+        -->
+        <header class="bg-slate-800 text-white p-6 flex flex-col justify-between fixed lg:static w-full h-16 lg:h-screen lg:w-auto z-20">
+            <div>
+                <div class="text-center mb-10">
+                    <h1 class="text-2xl font-bold">Oscar Cruz Diaz</h1>
+                    <p class="text-sm text-slate-400">Desarrollador en Crecimiento</p>
+                </div>
+                <nav>
+                    <ul class="space-y-2">
+                        <!-- 
+                          Cada enlace de navegación llama a la función `showSection` de JavaScript
+                          con el ID de la sección que debe mostrar. Este es el núcleo de la SPA.
+                        -->
+                        <li><a href="#filosofia" onclick="showSection('filosofia')" class="nav-link block p-3 rounded-md hover:bg-slate-700">Mi Filosofía</a></li>
+                        <li><a href="#laboratorio" onclick="showSection('laboratorio')" class="nav-link block p-3 rounded-md hover:bg-slate-700">Laboratorio Musical</a></li>
+                        <li><a href="#proyectos" onclick="showSection('proyectos')" class="nav-link block p-3 rounded-md hover:bg-slate-700">Proyectos Consolidados</a></li>
+                        <li><a href="#vision" onclick="showSection('vision')" class="nav-link block p-3 rounded-md hover:bg-slate-700">Visión a Futuro</a></li>
+                    </ul>
+                </nav>
+            </div>
+             <div class="text-center text-xs text-slate-500 hidden lg:block">
+                <p>&copy; 2025 Oscar Cruz Diaz</p>
+                <p>Construido con una sola página.</p>
+            </div>
+        </header>
+
+        <!-- 
+          CONTENIDO PRINCIPAL
+          Este 'main' es el contenedor para todas las secciones de contenido.
+          Solo una sección estará visible a la vez, controlada por JavaScript.
+        -->
+        <main class="p-4 sm:p-6 lg:p-8 pt-20 lg:pt-8">
+
+            <!-- 
+              SECCIÓN 1: MI FILOSOFÍA
+              ID: 'filosofia'. Es la sección por defecto al cargar la página.
+              Aquí se presenta tu mentalidad y enfoque hacia el desarrollo.
+            -->
+            <section id="filosofia" class="content-section">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h2 class="text-4xl font-bold mb-4">Mi Filosofía de Desarrollo</h2>
+                    <p class="text-lg text-slate-600 mb-6">Mi enfoque no es copiar, sino comprender la arquitectura fundamental de los sistemas. Me inspiro en la complejidad de herramientas como Soundtrap o la lógica de Minecraft, no para replicarlas, sino para desentrañar los principios de ingeniería que las hacen funcionar. Creo en el aprendizaje constante, la aplicación honesta del conocimiento y la creación de tecnología con un propósito positivo.</p>
+                    <div class="border-l-4 border-sky-500 pl-4 text-slate-500">
+                        "Mi intención es tener el conocimiento para crear oportunidades, no para tomar atajos. Cada línea de código es un paso en mi crecimiento profesional y personal."
+                    </div>
+                </div>
+            </section>
+
+            <!-- 
+              SECCIÓN 2: LABORATORIO MUSICAL
+              ID: 'laboratorio'. Esta sección está oculta por defecto.
+              Muestra tus prototipos interactivos: la caja de ritmos y el sintetizador.
+            -->
+            <section id="laboratorio" class="content-section hidden">
+                 <h2 class="text-4xl font-bold mb-6 text-center">Laboratorio Musical Interactivo</h2>
+                 <p class="text-center text-slate-600 mb-8">Estos son experimentos para entender la manipulación de audio en el navegador usando la Web Audio API.</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Módulo: Caja de Ritmos -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 text-center">Caja de Ritmos</h3>
+                        <div class="grid grid-cols-3 gap-4 max-w-xs mx-auto">
+                            <div class="drum-pad h-24 bg-slate-600 text-white" data-sound="kick">Kick (Q)</div>
+                            <div class="drum-pad h-24 bg-slate-600 text-white" data-sound="snare">Snare (W)</div>
+                            <div class="drum-pad h-24 bg-slate-600 text-white" data-sound="hihat">HiHat (E)</div>
+                            <div class="drum-pad h-24 bg-slate-600 text-white" data-sound="tom1">Tom 1 (A)</div>
+                            <div class="drum-pad h-24 bg-slate-600 text-white" data-sound="tom2">Tom 2 (S)</div>
+                            <div class="drum-pad h-24 bg-slate-600 text-white" data-sound="crash">Crash (D)</div>
+                        </div>
+                    </div>
+                    <!-- Módulo: Sintetizador de Piano -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 text-center">Sintetizador de Piano</h3>
+                         <div id="piano" class="flex justify-center relative h-48 items-start">
+                            <div class="key h-40 w-12 bg-slate-300 border-2 border-slate-400" data-note="C4">Q</div>
+                            <div class="black-key key" data-note="C#4"></div>
+                            <div class="key h-40 w-12 bg-slate-300 border-2 border-slate-400" data-note="D4">W</div>
+                            <div class="black-key key" data-note="D#4"></div>
+                            <div class="key h-40 w-12 bg-slate-300 border-2 border-slate-400" data-note="E4">E</div>
+                            <div class="key h-40 w-12 bg-slate-300 border-2 border-slate-400" data-note="F4">R</div>
+                            <div class="black-key key" data-note="F#4"></div>
+                            <div class="key h-40 w-12 bg-slate-300 border-2 border-slate-400" data-note="G4">T</div>
+                        </div>
+                        <p class="text-center text-sm text-slate-500 mt-4">Usa las teclas Q, W, E, R, T...</p>
+                    </div>
+                 </div>
+            </section>
+
+            <!-- 
+              SECCIÓN 3: PROYECTOS CONSOLIDADOS
+              ID: 'proyectos'. Oculta por defecto.
+              Aquí se integra la lógica de tu aplicación 'AUTOS MONGO' como un módulo interactivo.
+            -->
+            <section id="proyectos" class="content-section hidden">
+                <h2 class="text-4xl font-bold mb-6 text-center">Proyectos Consolidados</h2>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-1">Marketplace de Vehículos</h3>
+                    <p class="text-slate-500 mb-6">Demostración de una aplicación CRUD (Crear, Leer, Actualizar, Borrar) en una sola página.</p>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <button id="autos-todosBtn" class="bg-sky-500 text-white px-4 py-2 rounded-md hover:bg-sky-600">Todos</button>
+                            <button id="autos-autosBtn" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-300">Autos</button>
+                            <button id="autos-motosBtn" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-300">Motos</button>
+                        </div>
+                        <button id="autos-loginBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">Panel Admin</button>
+                        <button id="autos-logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 hidden">Salir del Panel</button>
+                    </div>
+
+                    <div id="autos-itemList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Las tarjetas de los vehículos se insertarán aquí con JavaScript -->
+                    </div>
+
+                    <!-- Panel de Admin para AUTOS MONGO (oculto) -->
+                    <div id="autos-adminPanel" class="hidden mt-8 border-t pt-6">
+                        <h4 class="text-xl font-bold mb-4">Panel de Administración</h4>
+                        <div id="autos-crudList" class="space-y-4 mb-6"></div>
+                        <button id="autos-addItemBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md">Agregar Vehículo</button>
+                        <form id="autos-addForm" class="hidden mt-4 space-y-3 bg-slate-50 p-4 rounded-lg">
+                            <input class="w-full p-2 border rounded" type="text" id="autos-itemNombre" placeholder="Marca y modelo" required>
+                            <input class="w-full p-2 border rounded" type="text" id="autos-itemTipo" placeholder="Tipo: auto/moto" required>
+                            <input class="w-full p-2 border rounded" type="number" id="autos-itemPrecio" placeholder="Precio" required>
+                            <input class="w-full p-2 border rounded" type="text" id="autos-itemImagen" placeholder="URL de imagen">
+                            <div>
+                                <button type="submit" id="autos-saveItemBtn" class="bg-green-500 text-white px-4 py-2 rounded">Guardar</button>
+                                <button type="button" id="autos-cancelItemBtn" class="bg-slate-500 text-white px-4 py-2 rounded">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 
+              SECCIÓN 4: VISIÓN A FUTURO
+              ID: 'vision'. Oculta por defecto.
+              Describe tus metas a largo plazo, mostrando pensamiento estratégico.
+            -->
+            <section id="vision" class="content-section hidden">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h2 class="text-4xl font-bold mb-6">Visión y Próximos Pasos</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-2xl font-bold flex items-center gap-3"><span>🎵</span> Secuenciador Musical Avanzado</h3>
+                            <p class="text-slate-600 mt-2">Mi meta es evolucionar los prototipos actuales hacia una herramienta de producción musical completa. Esto implica desarrollar una línea de tiempo interactiva (timeline), implementar la carga de múltiples instrumentos (muestras de audio) y la capacidad de guardar y exportar proyectos, investigando el almacenamiento en la nube (Cloud SQL/NoSQL).</p>
+                        </div>
+                         <div>
+                            <h3 class="text-2xl font-bold flex items-center gap-3"><span>📱</span> Del Navegador a la Aplicación Nativa</h3>
+                            <p class="text-slate-600 mt-2">Comprendo que el desarrollo web es el primer paso. Mi objetivo a largo plazo es aprender a empaquetar mis aplicaciones web en formatos nativos como APK para Android, utilizando tecnologías puente como Capacitor o React Native, para llegar a un público más amplio.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold flex items-center gap-3"><span>⚖️</span> Desarrollo Ético y Profesional</h3>
+                            <p class="text-slate-600 mt-2">Reconozco la importancia de la propiedad intelectual. A medida que mis proyectos maduren, investigaré los procesos de registro de marca y derechos de autor para proteger mi trabajo y operar de manera profesional, sentando las bases para una futura empresa de desarrollo.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+    // ===================================================================================
+    // NÚCLEO DE LA APLICACIÓN DE UNA SOLA PÁGINA (SPA)
+    // Este script controla la lógica principal de la aplicación.
+    // ===================================================================================
+
+    // --- 1. NAVEGACIÓN ENTRE SECCIONES ---
+    /**
+     * Esta función gestiona la visibilidad de las secciones de contenido.
+     * @param {string} sectionId - El ID de la sección que se debe mostrar.
+     */
+    function showSection(sectionId) {
+        // Primero, ocultamos todas las secciones que tengan la clase 'content-section'.
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.add('hidden');
+        });
+
+        // Luego, mostramos solo la sección que coincide con el ID proporcionado.
+        const activeSection = document.getElementById(sectionId);
+        if (activeSection) {
+            activeSection.classList.remove('hidden');
+        }
+    }
+    
+    // Al cargar la página, mostramos la sección 'filosofia' por defecto.
+    document.addEventListener('DOMContentLoaded', () => {
+        showSection('filosofia');
+    });
+
+
+    // ===================================================================================
+    // MÓDULO 2: LABORATORIO MUSICAL
+    // Toda la lógica para los instrumentos interactivos.
+    // ===================================================================================
+
+    // --- 2.1 Lógica del Sintetizador ---
+    const pianoNotes = {
+        'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00
+    };
+    const pianoKeyMap = { 'q': 'C4', '2': 'C#4', 'w': 'D4', '3': 'D#4', 'e': 'E4', 'r': 'F4', '5': 'F#4', 't': 'G4' };
+    let audioContext;
+    let activeOscillators = {};
+
+    function playPianoNote(note) {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const freq = pianoNotes[note];
+        if (!freq) return;
+
+        const oscillator = audioContext.createOscillator();
+        oscillator.type = 'triangle'; // Una onda suave similar a un piano eléctrico
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+        
+        const gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 1);
+
+        activeOscillators[note] = oscillator;
+    }
+    
+    document.querySelectorAll('#piano .key').forEach(key => {
+        key.addEventListener('mousedown', () => playPianoNote(key.dataset.note));
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        const note = pianoKeyMap[e.key];
+        if (note) {
+            playPianoNote(note);
+            const keyElement = document.querySelector(`#piano [data-note="${note}"]`);
+            if(keyElement) keyElement.classList.add('active');
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        const note = pianoKeyMap[e.key];
+        if (note) {
+            const keyElement = document.querySelector(`#piano [data-note="${note}"]`);
+            if(keyElement) keyElement.classList.remove('active');
+        }
+    });
+
+
+    // --- 2.2 Lógica de la Caja de Ritmos ---
+    let drumSamples = {};
+    const drumSoundSources = { // Sonidos cortos generados sintéticamente
+        kick: (ctx) => { let o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(150, 0); o.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15); g.gain.setValueAtTime(1, 0); g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.15); },
+        snare: (ctx) => { let n = ctx.createBufferSource(), b = ctx.createBuffer(1, ctx.sampleRate*0.2, ctx.sampleRat
